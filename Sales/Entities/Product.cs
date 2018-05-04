@@ -1,5 +1,6 @@
 ﻿namespace Sales.Entities
 {
+    [SqlProcedures(Delete = "sp_DeleteProduct", GetAll = "sp_GetProducts", InsertOrUpdate = "sp_InsertOrUpdateProduct")]
     public class Product : BaseEntity
     {
         [Column("Name", 60)]

@@ -13,4 +13,11 @@ namespace Sales.Entities
         public string Name { get; set; }
         public float FillWeight { get; set; }
     }
+
+    public class SqlProceduresAttribute : Attribute
+    {
+        public string GetAll { get; set; }
+        public string InsertOrUpdate { get; set; }
+        public string Delete { get; set; }
+    }
 }

@@ -16,6 +16,11 @@ namespace Sales.Forms
             InitializeComponent();
         }
 
+        public ProductSelectionForm(AppCore appCore) : base(appCore)
+        {
+            InitializeComponent();
+        }
+
         public async Task<Product> GetProduct()
         {
             PrepareDataGrid();
@@ -32,29 +37,15 @@ namespace Sales.Forms
             base.OkExecute();
         }
 
-        private List<Product> products;
+        private IEnumerable<Product> products;
         private async Task FillProductsAsync()
         {
-            products = new List<Product>();
-            using (var connection = new SqlConnection(Properties.Settings.Default.ConnectionString))
-                try
-                {
-                    await connection.OpenAsync();
-                    var command = new SqlCommand("sp_GetProducts", connection);
-                    command.CommandType = CommandType.StoredProcedure;
-                    var reader = await command.ExecuteReaderAsync();
-                    while (await reader.ReadAsync())
-                        products.Add(new Product
-                        {
-                            Id = (int)reader["Id"],
-                            Name = (string)reader["Name"],
-                            Cost = (decimal)reader["Cost"]
-                        });
-                }
-                catch (Exception exc)
-                {
-                    MessageBox.Show(exc.Message);
-                }
+            products = await AppCore.GetAllAsync((reader) => new Product
+            {
+                Id = (int)reader["Id"],
+                Name = (string)reader["Name"],
+                Cost = (decimal)reader["Cost"]
+            });
             productsGridView.DataSource = products;
         }
 

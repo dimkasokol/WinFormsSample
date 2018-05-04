@@ -15,29 +15,23 @@ namespace Sales.Forms
             InitializeComponent();
         }
 
+        public ProductForm(AppCore appCore) : base(appCore)
+        {
+            InitializeComponent();
+        }
+
         public async Task InsertOrUpdateAsync(Product product)
         {
             nameTextBox.Text = product.Name;
             costUpDown.Value = product.Cost;
             if (ShowDialog() != DialogResult.OK)
                 return;
-            using (var connection = new SqlConnection(Properties.Settings.Default.ConnectionString))
-                try
-                {
-                    await connection.OpenAsync();
-                    var command = new SqlCommand("sp_InsertOrUpdateProduct", connection);
-                    command.CommandType = CommandType.StoredProcedure;
-                    command.Parameters.Add(new SqlParameter("id", product.Id));
-                    command.Parameters.Add(new SqlParameter("name", nameTextBox.Text));
-                    command.Parameters.Add(new SqlParameter("cost", costUpDown.Value));
-                    if (await command.ExecuteScalarAsync() is int id)
-                        product.Id = id;
-                    connection.Close();
-                }
-                catch (Exception exc)
-                {
-                    MessageBox.Show(exc.Message);
-                }
+            await AppCore.InsertOrUpdateAsync<Product>(new[]
+            {
+                new SqlParameter("id", product.Id),
+                new SqlParameter("name", nameTextBox.Text),
+                new SqlParameter("cost", costUpDown.Value)
+            });
         }
 
         protected override void OkExecute()

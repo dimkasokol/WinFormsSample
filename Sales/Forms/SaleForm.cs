@@ -16,6 +16,11 @@ namespace Sales.Forms
             InitializeComponent();
         }
 
+        public SaleForm(AppCore appCore) : base(appCore)
+        {
+            InitializeComponent();
+        }
+
         public async Task InsertOrUpdateAsync(Sale sale)
         {
             await FillEmployeesAsync();
@@ -29,25 +34,15 @@ namespace Sales.Forms
             saleDateTimePicker.Value = sale.SaleDate == DateTime.MinValue ? DateTime.Now : sale.SaleDate;
             if (ShowDialog() != DialogResult.OK)
                 return;
-            using (var connection = new SqlConnection(Properties.Settings.Default.ConnectionString))
-                try
-                {
-                    await connection.OpenAsync();
-                    var command = new SqlCommand("sp_InsertOrUpdateSale", connection);
-                    command.CommandType = CommandType.StoredProcedure;
-                    command.Parameters.Add(new SqlParameter("id", sale.Id));
-                    command.Parameters.Add(new SqlParameter("employeeId", employee.Id));
-                    command.Parameters.Add(new SqlParameter("productId", product.Id));
-                    command.Parameters.Add(new SqlParameter("amount", amountUpDown.Value));
-                    command.Parameters.Add(new SqlParameter("totalCost", totalCostUpDown.Value));
-                    command.Parameters.Add(new SqlParameter("saleDate", saleDateTimePicker.Value));
-                    if (await command.ExecuteScalarAsync() is int id)
-                        sale.Id = id;
-                }
-                catch (Exception exc)
-                {
-                    MessageBox.Show(exc.Message);
-                }
+            await AppCore.InsertOrUpdateAsync<Sale>(new[]
+            {
+                new SqlParameter("id", sale.Id),
+                new SqlParameter("employeeId", employee.Id),
+                new SqlParameter("productId", product.Id),
+                new SqlParameter("amount", amountUpDown.Value),
+                new SqlParameter("totalCost", totalCostUpDown.Value),
+                new SqlParameter("saleDate", saleDateTimePicker.Value)
+            });
         }
 
         protected override void OkExecute()
@@ -71,26 +66,11 @@ namespace Sales.Forms
 
         private async Task FillEmployeesAsync()
         {
-            var employees = new List<Employee>();
-            using (var connection = new SqlConnection(Properties.Settings.Default.ConnectionString))
-                try
-                {
-                    await connection.OpenAsync();
-                    var command = new SqlCommand("sp_GetEmployees", connection);
-                    command.CommandType = CommandType.StoredProcedure;
-                    var reader = await command.ExecuteReaderAsync();
-                    while (await reader.ReadAsync())
-                        employees.Add(new Employee
-                        {
-                            Id = (int)reader["Id"],
-                            Name = (string)reader["Name"]
-                        });
-                }
-                catch (Exception exc)
-                {
-                    MessageBox.Show(exc.Message);
-                }
-            employeeComboBox.DataSource = employees;
+            employeeComboBox.DataSource = await AppCore.GetAllAsync((reader) => new Employee
+            {
+                Id = (int)reader["Id"],
+                Name = (string)reader["Name"]
+            });
             employeeComboBox.SelectedIndex = -1;
         }
 
@@ -103,7 +83,7 @@ namespace Sales.Forms
         private Product product;
         private async void productButton_Click(object sender, EventArgs e)
         {
-            using (var form = new ProductSelectionForm())
+            using (var form = new ProductSelectionForm(AppCore))
                 product = await form.GetProduct();
             productTextBox.Text = product.Name;
         }

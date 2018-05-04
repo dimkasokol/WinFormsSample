@@ -3,9 +3,14 @@ using System.Windows.Forms;
 
 namespace Sales.Forms
 {
-    public partial class BaseDialogForm : Form
+    public partial class BaseDialogForm : BaseCoreForm
     {
         public BaseDialogForm()
+        {
+            InitializeComponent();
+        }
+
+        public BaseDialogForm(AppCore appCore) : base(appCore)
         {
             InitializeComponent();
         }

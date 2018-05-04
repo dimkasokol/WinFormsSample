@@ -17,32 +17,17 @@ namespace Sales.Forms
 
         protected override async Task<IEnumerable<object>> FillDataAsync()
         {
-            var products = new List<Product>();
-            using (var connection = new SqlConnection(Properties.Settings.Default.ConnectionString))
-                try
-                {
-                    await connection.OpenAsync();
-                    var command = new SqlCommand("sp_GetProducts", connection);
-                    command.CommandType = CommandType.StoredProcedure;
-                    var reader = await command.ExecuteReaderAsync();
-                    while (await reader.ReadAsync())
-                        products.Add(new Product
-                        {
-                            Id = (int)reader["Id"],
-                            Name = (string)reader["Name"],
-                            Cost = (decimal)reader["Cost"]
-                        });
-                }
-                catch (Exception exc)
-                {
-                    MessageBox.Show(exc.Message);
-                }
-            return products;
+            return await AppCore.GetAllAsync((reader) => new Product
+            {
+                Id = (int)reader["Id"],
+                Name = (string)reader["Name"],
+                Cost = (decimal)reader["Cost"]
+            });
         }
 
         protected override async Task OnAddItemAsync()
         {
-            using (var form = new ProductForm())
+            using (var form = new ProductForm(AppCore))
                 await form.InsertOrUpdateAsync(new Product());
             await base.OnAddItemAsync();
         }
@@ -51,14 +36,14 @@ namespace Sales.Forms
         {
             if (dataGridView.SelectedRows.Count < 1 || !(dataGridView.SelectedRows[0].DataBoundItem is Product product))
                 return;
-            using (var form = new ProductForm())
+            using (var form = new ProductForm(AppCore))
                 await form.InsertOrUpdateAsync(product);
             await base.OnEditItemAsync();
         }
 
         protected override async Task OnRemoveItemAsync()
         {
-            await RemoveItemAsync<Product>("sp_DeleteProduct");
+            await RemoveItemAsync<Product>();
             await base.OnRemoveItemAsync();
         }
     }

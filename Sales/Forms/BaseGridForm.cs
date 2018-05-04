@@ -9,21 +9,18 @@ using Sales.Entities;
 
 namespace Sales.Forms
 {
-    public abstract partial class BaseGridForm : Form
+    public abstract partial class BaseGridForm : BaseCoreForm
     {
         public BaseGridForm()
         {
             InitializeComponent();
         }
 
-        public BaseGridForm(AppCore appCore)
+        public BaseGridForm(AppCore appCore) : base(appCore)
         {
             InitializeComponent();
-            AppCore = appCore;
             AppCore.Forms.Add(this);
         }
-
-        protected AppCore AppCore { get; private set; }
 
         protected abstract Task<IEnumerable<object>> FillDataAsync();
 
@@ -33,24 +30,11 @@ namespace Sales.Forms
 
         protected virtual async Task OnRemoveItemAsync() => await RefreshDataGridAsync();
 
-        protected async Task RemoveItemAsync<T>(string spName) where T : BaseEntity
+        protected async Task RemoveItemAsync<T>()
         {
-            if (dataGridView.SelectedRows.Count < 1 || !(dataGridView.SelectedRows[0].DataBoundItem is T item))
+            if (dataGridView.SelectedRows.Count < 1 || !(dataGridView.SelectedRows[0].DataBoundItem is BaseEntity item))
                 return;
-            using (var connection = new SqlConnection(Properties.Settings.Default.ConnectionString))
-                try
-                {
-                    await connection.OpenAsync();
-                    var command = new SqlCommand(spName, connection);
-                    command.CommandType = CommandType.StoredProcedure;
-                    command.Parameters.Add(new SqlParameter("id", item.Id));
-                    await command.ExecuteNonQueryAsync();
-                    connection.Close();
-                }
-                catch (Exception exc)
-                {
-                    MessageBox.Show(exc.Message);
-                }
+            await AppCore.DeleteAsync<T>(item.Id);
         }
 
         protected override async void OnShown(EventArgs e)

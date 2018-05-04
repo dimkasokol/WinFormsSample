@@ -57,6 +57,12 @@
     <Compile Include="Forms\BaseDialogForm.Designer.cs">
       <DependentUpon>BaseDialogForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Forms\BaseCoreForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\BaseCoreForm.Designer.cs">
+      <DependentUpon>BaseCoreForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Forms\BaseGridForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -113,6 +119,9 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="Forms\BaseCoreForm.resx">
+      <DependentUpon>BaseCoreForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Forms\BaseDialogForm.resx">
       <DependentUpon>BaseDialogForm.cs</DependentUpon>
     </EmbeddedResource>

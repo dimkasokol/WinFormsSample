@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Forms;
+using Sales.Entities;
 using Sales.Forms;
 
 namespace Sales
@@ -25,13 +28,70 @@ namespace Sales
             return null;
         }
 
+        public async Task<IEnumerable<T>> GetAllAsync<T>(Func<SqlDataReader, T> fromReader) where T : BaseEntity
+        {
+            var items = new List<T>();
+            using (var connection = new SqlConnection(Properties.Settings.Default.ConnectionString))
+            using (var command = new SqlCommand(GetProcedures<T>().GetAll, connection))
+                try
+                {
+                    command.CommandType = CommandType.StoredProcedure;
+                    await connection.OpenAsync();
+                    var reader = await command.ExecuteReaderAsync();
+                    while (await reader.ReadAsync())
+                        items.Add(fromReader.Invoke(reader));
+                }
+                catch (Exception exc)
+                {
+                    MessageBox.Show(exc.Message);
+                }
+            return items;
+        }
+
+        public async Task InsertOrUpdateAsync<T>(SqlParameter[] parameters)
+        {
+            using (var connection = new SqlConnection(Properties.Settings.Default.ConnectionString))
+            using (var command = new SqlCommand(GetProcedures<T>().InsertOrUpdate, connection))
+                try
+                {
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.Parameters.AddRange(parameters);
+                    await connection.OpenAsync();
+                    await command.ExecuteScalarAsync();
+                }
+                catch (Exception exc)
+                {
+                    MessageBox.Show(exc.Message);
+                }
+        }
+
+        public async Task DeleteAsync<T>(int id)
+        {
+            using (var connection = new SqlConnection(Properties.Settings.Default.ConnectionString))
+            using (var command = new SqlCommand(GetProcedures<T>().Delete, connection))
+                try
+                {
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.Parameters.Add(new SqlParameter("id", id));
+                    await connection.OpenAsync();
+                    await command.ExecuteNonQueryAsync();
+                    connection.Close();
+                }
+                catch (Exception exc)
+                {
+                    MessageBox.Show(exc.Message);
+                }
+        }
+
+        private SqlProceduresAttribute GetProcedures<T>() => typeof(T).GetCustomAttributes(typeof(SqlProceduresAttribute), false).SingleOrDefault() as SqlProceduresAttribute;
+
         private void CheckConnection()
         {
             var connectionString = Properties.Settings.Default.ConnectionString;
             using (var connection = new SqlConnection(connectionString))
             {
                 var retry = false;
-                while (connection.State != System.Data.ConnectionState.Open)
+                while (connection.State != ConnectionState.Open)
                     try
                     {
                         connection.Open();

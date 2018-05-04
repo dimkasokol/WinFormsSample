@@ -2,6 +2,7 @@
 
 namespace Sales.Entities
 {
+    [SqlProcedures(Delete = "sp_DeleteSale", GetAll = "sp_GetSales", InsertOrUpdate = "sp_InsertOrUpdateSale")]
     public class Sale : BaseEntity
     {
         [Column("Employee", 40)]

@@ -14,27 +14,21 @@ namespace Sales.Forms
             InitializeComponent();
         }
 
+        public EmployeeForm(AppCore appCore) : base(appCore)
+        {
+            InitializeComponent();
+        }
+
         public async Task InsertOrUpdateAsync(Employee employee)
         {
             nameTextBox.Text = employee.Name;
             if (ShowDialog() != DialogResult.OK)
                 return;
-            using (var connection = new SqlConnection(Properties.Settings.Default.ConnectionString))
-                try
-                {
-                    await connection.OpenAsync();
-                    var command = new SqlCommand("sp_InsertOrUpdateEmployee", connection);
-                    command.CommandType = CommandType.StoredProcedure;
-                    command.Parameters.Add(new SqlParameter("id", employee.Id));
-                    command.Parameters.Add(new SqlParameter("name", nameTextBox.Text));
-                    if (await command.ExecuteScalarAsync() is int id)
-                        employee.Id = id;
-                    connection.Close();
-                }
-                catch (Exception exc)
-                {
-                    MessageBox.Show(exc.Message);
-                }
+            await AppCore.InsertOrUpdateAsync<Employee>(new[]
+            {
+                new SqlParameter("id", employee.Id),
+                new SqlParameter("name", nameTextBox.Text)
+            });
         }
 
         protected override void OkExecute()

@@ -27,35 +27,20 @@ namespace Sales.Forms
 
         protected override async Task<IEnumerable<object>> FillDataAsync()
         {
-            var sales = new List<Sale>();
-            using (var connection = new SqlConnection(Properties.Settings.Default.ConnectionString))
-                try
-                {
-                    await connection.OpenAsync();
-                    var command = new SqlCommand("sp_GetSales", connection);
-                    command.CommandType = CommandType.StoredProcedure;
-                    var reader = await command.ExecuteReaderAsync();
-                    while (await reader.ReadAsync())
-                        sales.Add(new Sale
-                        {
-                            Id = (int)reader["Id"],
-                            Employee = new Employee { Id = (int)reader["EmployeeId"], Name = (string)reader["EmployeeName"] },
-                            Product = new Product { Id = (int)reader["ProductId"], Name = (string)reader["ProductName"], Cost = (decimal)reader["Cost"] },
-                            Amount = (int)reader["Amount"],
-                            TotalCost = (decimal)reader["TotalCost"],
-                            SaleDate = (DateTime)reader["SaleDate"]
-                        });
-                }
-                catch (Exception exc)
-                {
-                    MessageBox.Show(exc.Message);
-                }
-            return sales;
+            return await AppCore.GetAllAsync((reader) => new Sale
+            {
+                Id = (int)reader["Id"],
+                Employee = new Employee { Id = (int)reader["EmployeeId"], Name = (string)reader["EmployeeName"] },
+                Product = new Product { Id = (int)reader["ProductId"], Name = (string)reader["ProductName"], Cost = (decimal)reader["Cost"] },
+                Amount = (int)reader["Amount"],
+                TotalCost = (decimal)reader["TotalCost"],
+                SaleDate = (DateTime)reader["SaleDate"]
+            });
         }
 
         protected override async Task OnAddItemAsync()
         {
-            using (var form = new SaleForm())
+            using (var form = new SaleForm(AppCore))
                 await form.InsertOrUpdateAsync(new Sale());
             await base.OnAddItemAsync();
         }
@@ -64,14 +49,14 @@ namespace Sales.Forms
         {
             if (dataGridView.SelectedRows.Count < 1 || !(dataGridView.SelectedRows[0].DataBoundItem is Sale sale))
                 return;
-            using (var form = new SaleForm())
+            using (var form = new SaleForm(AppCore))
                 await form.InsertOrUpdateAsync(sale);
             await base.OnEditItemAsync();
         }
 
         protected override async Task OnRemoveItemAsync()
         {
-            await RemoveItemAsync<Sale>("sp_DeleteSale");
+            await RemoveItemAsync<Sale>();
             await base.OnRemoveItemAsync();
         }
 
