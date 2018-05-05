@@ -32,7 +32,7 @@ namespace Sales
         {
             var items = new List<T>();
             using (var connection = new SqlConnection(Properties.Settings.Default.ConnectionString))
-            using (var command = new SqlCommand(GetProcedures<T>().GetAll, connection))
+            using (var command = new SqlCommand(GetProcedures<T>()?.GetAll, connection))
                 try
                 {
                     command.CommandType = CommandType.StoredProcedure;
@@ -48,16 +48,17 @@ namespace Sales
             return items;
         }
 
-        public async Task InsertOrUpdateAsync<T>(SqlParameter[] parameters)
+        public async Task InsertOrUpdateAsync(BaseEntity entity)
         {
             using (var connection = new SqlConnection(Properties.Settings.Default.ConnectionString))
-            using (var command = new SqlCommand(GetProcedures<T>().InsertOrUpdate, connection))
+            using (var command = new SqlCommand(GetProcedures(entity.GetType())?.InsertOrUpdate, connection))
                 try
                 {
                     command.CommandType = CommandType.StoredProcedure;
-                    command.Parameters.AddRange(parameters);
+                    command.Parameters.AddRange(entity.GetParameters());
                     await connection.OpenAsync();
-                    await command.ExecuteScalarAsync();
+                    if (await command.ExecuteScalarAsync() is int id)
+                        entity.Id = id;
                 }
                 catch (Exception exc)
                 {
@@ -65,14 +66,14 @@ namespace Sales
                 }
         }
 
-        public async Task DeleteAsync<T>(int id)
+        public async Task DeleteAsync(BaseEntity entity)
         {
             using (var connection = new SqlConnection(Properties.Settings.Default.ConnectionString))
-            using (var command = new SqlCommand(GetProcedures<T>().Delete, connection))
+            using (var command = new SqlCommand(GetProcedures(entity.GetType())?.Delete, connection))
                 try
                 {
                     command.CommandType = CommandType.StoredProcedure;
-                    command.Parameters.Add(new SqlParameter("id", id));
+                    command.Parameters.Add(new SqlParameter("id", entity.Id));
                     await connection.OpenAsync();
                     await command.ExecuteNonQueryAsync();
                     connection.Close();
@@ -84,6 +85,8 @@ namespace Sales
         }
 
         private SqlProceduresAttribute GetProcedures<T>() => typeof(T).GetCustomAttributes(typeof(SqlProceduresAttribute), false).SingleOrDefault() as SqlProceduresAttribute;
+
+        private SqlProceduresAttribute GetProcedures(Type type) => type.GetCustomAttributes(typeof(SqlProceduresAttribute), false).SingleOrDefault() as SqlProceduresAttribute;
 
         private void CheckConnection()
         {

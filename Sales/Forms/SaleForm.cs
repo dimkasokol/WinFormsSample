@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -11,11 +9,6 @@ namespace Sales.Forms
 {
     public partial class SaleForm : BaseDialogForm
     {
-        public SaleForm()
-        {
-            InitializeComponent();
-        }
-
         public SaleForm(AppCore appCore) : base(appCore)
         {
             InitializeComponent();
@@ -34,15 +27,12 @@ namespace Sales.Forms
             saleDateTimePicker.Value = sale.SaleDate == DateTime.MinValue ? DateTime.Now : sale.SaleDate;
             if (ShowDialog() != DialogResult.OK)
                 return;
-            await AppCore.InsertOrUpdateAsync<Sale>(new[]
-            {
-                new SqlParameter("id", sale.Id),
-                new SqlParameter("employeeId", employee.Id),
-                new SqlParameter("productId", product.Id),
-                new SqlParameter("amount", amountUpDown.Value),
-                new SqlParameter("totalCost", totalCostUpDown.Value),
-                new SqlParameter("saleDate", saleDateTimePicker.Value)
-            });
+            sale.Employee = employee;
+            sale.Product = product;
+            sale.Amount = Convert.ToInt32(amountUpDown.Value);
+            sale.TotalCost = totalCostUpDown.Value;
+            sale.SaleDate = saleDateTimePicker.Value;
+            await AppCore.InsertOrUpdateAsync(sale);
         }
 
         protected override void OkExecute()
@@ -66,26 +56,19 @@ namespace Sales.Forms
 
         private async Task FillEmployeesAsync()
         {
-            employeeComboBox.DataSource = await AppCore.GetAllAsync((reader) => new Employee
-            {
-                Id = (int)reader["Id"],
-                Name = (string)reader["Name"]
-            });
+            employeeComboBox.DataSource = await AppCore.GetAllAsync((reader) => Employee.GetFromReader(reader));
             employeeComboBox.SelectedIndex = -1;
         }
 
         private Employee employee;
-        private void employeeComboBox_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            employee = employeeComboBox.SelectedItem as Employee;
-        }
+        private void employeeComboBox_SelectedIndexChanged(object sender, EventArgs e) => employee = employeeComboBox.SelectedItem as Employee;
 
         private Product product;
         private async void productButton_Click(object sender, EventArgs e)
         {
             using (var form = new ProductSelectionForm(AppCore))
                 product = await form.GetProduct();
-            productTextBox.Text = product.Name;
+            productTextBox.Text = product?.Name;
         }
 
         private void amountUpDown_ValueChanged(object sender, EventArgs e)

@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -11,11 +9,6 @@ namespace Sales.Forms
 {
     public partial class ProductSelectionForm : BaseDialogForm
     {
-        public ProductSelectionForm()
-        {
-            InitializeComponent();
-        }
-
         public ProductSelectionForm(AppCore appCore) : base(appCore)
         {
             InitializeComponent();
@@ -40,12 +33,7 @@ namespace Sales.Forms
         private IEnumerable<Product> products;
         private async Task FillProductsAsync()
         {
-            products = await AppCore.GetAllAsync((reader) => new Product
-            {
-                Id = (int)reader["Id"],
-                Name = (string)reader["Name"],
-                Cost = (decimal)reader["Cost"]
-            });
+            products = await AppCore.GetAllAsync((reader) => Product.GetFromReader(reader));
             productsGridView.DataSource = products;
         }
 

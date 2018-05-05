@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 using Sales.Entities;
 
 namespace Sales.Forms
@@ -15,14 +11,7 @@ namespace Sales.Forms
             InitializeComponent();
         }
 
-        protected override async Task<IEnumerable<object>> FillDataAsync()
-        {
-            return await AppCore.GetAllAsync((reader) => new Employee
-            {
-                Id = (int)reader["Id"],
-                Name = (string)reader["Name"]
-            });
-        }
+        protected override async Task<IEnumerable<object>> FillDataAsync() => await AppCore.GetAllAsync((reader) => Employee.GetFromReader(reader));
 
         protected override async Task OnAddItemAsync()
         {
@@ -38,12 +27,6 @@ namespace Sales.Forms
             using (var form = new EmployeeForm(AppCore))
                 await form.InsertOrUpdateAsync(employee);
             await base.OnEditItemAsync();
-        }
-
-        protected override async Task OnRemoveItemAsync()
-        {
-            await RemoveItemAsync<Employee>();
-            await base.OnRemoveItemAsync();
         }
     }
 }

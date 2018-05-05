@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Sales.Entities;
@@ -10,11 +7,6 @@ namespace Sales.Forms
 {
     public partial class ProductForm : BaseDialogForm
     {
-        public ProductForm()
-        {
-            InitializeComponent();
-        }
-
         public ProductForm(AppCore appCore) : base(appCore)
         {
             InitializeComponent();
@@ -26,12 +18,9 @@ namespace Sales.Forms
             costUpDown.Value = product.Cost;
             if (ShowDialog() != DialogResult.OK)
                 return;
-            await AppCore.InsertOrUpdateAsync<Product>(new[]
-            {
-                new SqlParameter("id", product.Id),
-                new SqlParameter("name", nameTextBox.Text),
-                new SqlParameter("cost", costUpDown.Value)
-            });
+            product.Name = nameTextBox.Text;
+            product.Cost = costUpDown.Value;
+            await AppCore.InsertOrUpdateAsync(product);
         }
 
         protected override void OkExecute()

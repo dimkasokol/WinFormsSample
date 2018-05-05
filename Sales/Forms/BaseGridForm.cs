@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -9,7 +7,7 @@ using Sales.Entities;
 
 namespace Sales.Forms
 {
-    public abstract partial class BaseGridForm : BaseCoreForm
+    public partial class BaseGridForm : BaseCoreForm
     {
         public BaseGridForm()
         {
@@ -22,19 +20,16 @@ namespace Sales.Forms
             AppCore.Forms.Add(this);
         }
 
-        protected abstract Task<IEnumerable<object>> FillDataAsync();
+        protected virtual async Task<IEnumerable<object>> FillDataAsync() => await new Task<IEnumerable<object>>(() => new List<object>());
 
         protected virtual async Task OnAddItemAsync() => await RefreshDataGridAsync();
 
         protected virtual async Task OnEditItemAsync() => await RefreshDataGridAsync();
 
-        protected virtual async Task OnRemoveItemAsync() => await RefreshDataGridAsync();
-
-        protected async Task RemoveItemAsync<T>()
+        protected virtual async Task OnRemoveItemAsync()
         {
-            if (dataGridView.SelectedRows.Count < 1 || !(dataGridView.SelectedRows[0].DataBoundItem is BaseEntity item))
-                return;
-            await AppCore.DeleteAsync<T>(item.Id);
+            await RemoveItemAsync();
+            await RefreshDataGridAsync();
         }
 
         protected override async void OnShown(EventArgs e)
@@ -47,6 +42,13 @@ namespace Sales.Forms
         {
             AppCore.Forms.Remove(this);
             base.OnClosed(e);
+        }
+
+        private async Task RemoveItemAsync()
+        {
+            if (dataGridView.SelectedRows.Count < 1 || !(dataGridView.SelectedRows[0].DataBoundItem is BaseEntity item))
+                return;
+            await AppCore.DeleteAsync(item);
         }
 
         private async Task RefreshDataGridAsync()
